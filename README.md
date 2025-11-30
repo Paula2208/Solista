@@ -4,7 +4,29 @@
 
 Solista es una plataforma web que permite cargar partituras en **formato MusicXML** y visualizar la línea vocal en un **piano roll galáctico**, mientras analiza tu voz en tiempo real usando técnicas modernas de procesamiento de audio.
 
-El objetivo es brindar a cantantes y estudiantes una experiencia inmersiva que combina diseño oscuro, estética espacial y análisis musical avanzado.
+---
+
+## 📦 **Usar Solista**
+
+Abre:
+👉 `https://paucode.com/Solista/`
+
+---
+
+## 🎶 **Cómo usar Solista**
+
+1. Abre **demo.html**.
+2. Sube un archivo **.musicxml**.
+3. Selecciona tu voz (Soprano, Alto, Tenor, Bajo).
+4. Se generará automáticamente el **piano roll galáctico**.
+5. Activa el micrófono.
+6. Comienza a cantar siguiendo la línea vocal.
+
+Solista analizará tu afinación en tiempo real y mostrará:
+
+* Nota detectada
+* Nota objetivo
+* Desviación
 
 ---
 
@@ -37,13 +59,6 @@ El objetivo es brindar a cantantes y estudiantes una experiencia inmersiva que c
 * Cálculo de desviación en centésimas.
 * Feedback visual inmediato.
 
-### 🌙 UI / UX
-
-* Tema completamente oscuro.
-* Elementos espaciales animados.
-* Tarjetas de funcionalidades con efectos de profundidad.
-* Flujo simple: cargar → visualizar → cantar.
-
 ---
 
 ## 📁 **Estructura del proyecto**
@@ -70,45 +85,6 @@ solista/
     ├── icons/
     └── demo-files/
 ```
-
----
-
-## 📦 **Instalación y ejecución**
-
-Solista es **100% frontend**, así que no requiere backend ni frameworks pesados.
-
-### ✔️ Opción 1: Abrir directo en tu PC
-
-Solo abre `index.html` o `demo.html` en tu navegador.
-
-### ✔️ Opción 2: Servidor local recomendado
-
-Para evitar bloqueos del navegador con archivos locales:
-
-```bash
-# Con Python 3
-python3 -m http.server 8080
-```
-
-Luego abre:
-👉 `http://localhost:8080`
-
----
-
-## 🎶 **Cómo usar Solista**
-
-1. Abre **demo.html**.
-2. Sube un archivo **.musicxml**.
-3. Selecciona tu voz (Soprano, Alto, Tenor, Bajo).
-4. Se generará automáticamente el **piano roll galáctico**.
-5. Activa el micrófono.
-6. Comienza a cantar siguiendo la línea vocal.
-
-Solista analizará tu afinación en tiempo real y mostrará:
-
-* Nota detectada
-* Nota objetivo
-* Desviación
 
 ---
 
