@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solista</title>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="stars"></div>
+
+    <!-- HEADER -->
+    <header class="py-3 px-4 d-flex justify-content-between align-items-center"
+        style="background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.1);">
+
+        <a href="#" class="navbar-brand d-flex align-items-center">
+            <svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Orbital ring -->
+                <circle cx="50" cy="50" r="35" stroke="#8ab4ff" stroke-width="4" opacity="0.6" />
+
+                <!-- Galaxy swirl -->
+                <path d="M20 55 Q50 10 80 45" stroke="#00d4ff" stroke-width="3" fill="none" opacity="0.8" />
+                <path d="M20 45 Q50 90 80 55" stroke="#b388ff" stroke-width="3" fill="none" opacity="0.8" />
+
+                <!-- Musical note at center -->
+                <path d="M50 30 V65 
+             A8 8 0 1 0 50 65
+             V30 Z" fill="#ffffff" />
+                <circle cx="50" cy="70" r="7" fill="#ffffff" />
+
+                <!-- Star dots -->
+                <circle cx="25" cy="30" r="2" fill="#8ab4ff" />
+                <circle cx="75" cy="70" r="2" fill="#b388ff" />
+                <circle cx="70" cy="28" r="1.8" fill="#00d4ff" />
+                <circle cx="32" cy="75" r="1.5" fill="#ffffff" />
+            </svg>
+            <h1 class="title">Solista</h1>
+        </a>
+        <a href="index.html" class="btn btn-outline-light">Volver</a>
+    </header>
+
+    <!-- WORKSPACE -->
+    <div class="workspace container-fluid">
+
+        <!-- PIANO ROLL -->
+        <div class="piano-roll">
+            <div class="roll-grid"></div>
+            <svg id="pianoSvg" class="piano-svg"></svg>
+
+            <div id="rollPlaceholder" class="d-flex justify-content-center align-items-center h-100"
+                style="color:var(--text-soft); font-size:1.2rem;">
+                Carga un archivo MusicXML (.musicxml) para comenzar…
+            </div>
+        </div>
+
+
+        <!-- PANEL DERECHO -->
+        <aside class="panel">
+
+            <h5 class="mb-3">Archivo .musicmxl</h5>
+            <input type="file" class="form-control" accept=".musicxml,.xml" id="mxlInput">
+
+            <div class="mt-3" id="fileInfo" style="color:var(--text-soft); font-size:0.9rem;">
+                Ningún archivo cargado.
+            </div>
+
+            <hr class="my-4" style="border-color:rgba(255,255,255,0.1);">
+
+            <h5 class="mb-2">Selecciona tu voz</h5>
+            <select id="voiceSelect" class="form-select">
+                <option value="auto">Auto-detectar</option>
+                <option value="soprano">Soprano</option>
+                <option value="alto">Alto</option>
+                <option value="tenor">Tenor</option>
+                <option value="bajo">Bajo</option>
+            </select>
+
+            <hr class="my-4" style="border-color:rgba(255,255,255,0.1);">
+
+            <h5 class="mb-2">Controles</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-neon w-100"><i class="bi bi-mic"></i> Mic</button>
+                <button class="btn btn-outline-light w-100"><i class="bi bi-play-fill"></i></button>
+                <button class="btn btn-outline-light w-100"><i class="bi bi-stop-fill"></i></button>
+            </div>
+
+            <hr class="my-4" style="border-color:rgba(255,255,255,0.1);">
+
+            <h5 class="mb-2">Análisis en vivo</h5>
+            <div class="p-3 rounded" style="background: rgba(255,255,255,0.04);">
+                <p class="m-0" style="color:var(--text-soft);">• Pitch: <span id="pitchData">--</span></p>
+                <p class="m-0" style="color:var(--text-soft);">• Desviación: <span id="diffData">--</span></p>
+                <p class="m-0" style="color:var(--text-soft);">• Nota objetivo: <span id="targetNote">--</span></p>
+            </div>
+
+        </aside>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="text-center">
+        <small>Solista © 2025 — Construido para cantantes que vienen de otra galaxia ✦</small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="pianoRoll.js"></script>
+
+    <script type="module">
+        import { loadMusicXML, pitchToMidi } from "./mxlParser.js";
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById("mxlInput").onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                document.getElementById("fileInfo").innerText = "Partitura cargada: " + file.name;
+
+                try {
+                    const score = await loadMusicXML(file);
+                    console.log("Partitura:", score);
+
+                    const notes = score.parts[0].notes;
+                    console.log("Notas extraídas:", notes);
+
+                    if (typeof renderPianoRoll === "function") {
+                        renderPianoRoll(notes, {
+                            tempo: 120,
+                            pxPerBeat: 180
+                        });
+                    }
+
+                } catch (err) {
+                    console.error("Error:", err);
+                    document.getElementById("fileInfo").innerText = "Error cargando el archivo";
+                }
+            };
+
+            /* --- Render principal --- */
+            function renderPianoRoll(notes) {
+                const svg = document.getElementById("pianoSvg");
+                const placeholder = document.getElementById("rollPlaceholder");
+                placeholder.style.display = "none";
+
+                svg.innerHTML = "";
+
+                /* 1. Convertir notas a MIDI y buscar rango */
+                const midiNotes = notes.map(n => ({
+                    start: n.time,
+                    dur: n.duration,
+                    midi: pitchToMidi(n.step, n.alter, n.octave)
+                }));
+
+                const minMidi = Math.min(...midiNotes.map(n => n.midi));
+                const maxMidi = Math.max(...midiNotes.map(n => n.midi));
+                const height = svg.clientHeight;
+                const width = svg.clientWidth;
+
+                const rowHeight = height / (maxMidi - minMidi + 1);
+                const timeScale = 120; // px por segundo
+
+                /* 2. Dibujar rectángulos */
+                midiNotes.forEach(n => {
+                    const y = height - (n.midi - minMidi + 1) * rowHeight;
+                    const x = n.start * timeScale;
+                    const w = n.dur * timeScale;
+                    const h = rowHeight * 0.65;
+
+                    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    rect.setAttribute("x", x);
+                    rect.setAttribute("y", y + (rowHeight - h) / 2);
+                    rect.setAttribute("width", w);
+                    rect.setAttribute("height", h);
+                    rect.setAttribute("class", "note-rect");
+
+                    svg.appendChild(rect);
+                });
+
+                /* 3. Agregar línea de tiempo animada */
+                const pointer = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                pointer.setAttribute("x1", 0);
+                pointer.setAttribute("x2", 0);
+                pointer.setAttribute("y1", 0);
+                pointer.setAttribute("y2", height);
+                pointer.setAttribute("class", "time-pointer");
+                svg.appendChild(pointer);
+
+                animateTimePointer(pointer, width, notes);
+            }
+
+            /* --- Animación suave del puntero temporal --- */
+            function animateTimePointer(pointer, width, notes) {
+                const totalTime = Math.max(...notes.map(n => n.time + n.duration));
+                const totalPx = width;
+                const duration = totalTime * 1000;
+
+                pointer.style.transition = `transform ${duration}ms linear`;
+                pointer.style.transform = `translateX(${totalPx}px)`;
+
+                // Reset si deseas loop
+                setTimeout(() => {
+                    pointer.style.transition = "none";
+                    pointer.style.transform = "translateX(0)";
+                    setTimeout(() => {
+                        pointer.style.transition = `transform ${duration}ms linear`;
+                        pointer.style.transform = `translateX(${totalPx}px)`;
+                    }, 50);
+                }, duration + 500);
+            }
+
+        })
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,20 @@
+<svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Orbital ring -->
+    <circle cx="50" cy="50" r="35" stroke="#8ab4ff" stroke-width="4" opacity="0.6" />
+
+    <!-- Galaxy swirl -->
+    <path d="M20 55 Q50 10 80 45" stroke="#00d4ff" stroke-width="3" fill="none" opacity="0.8" />
+    <path d="M20 45 Q50 90 80 55" stroke="#b388ff" stroke-width="3" fill="none" opacity="0.8" />
+
+    <!-- Musical note at center -->
+    <path d="M50 30 V65 
+             A8 8 0 1 0 50 65
+             V30 Z" fill="#ffffff" />
+    <circle cx="50" cy="70" r="7" fill="#ffffff" />
+
+    <!-- Star dots -->
+    <circle cx="25" cy="30" r="2" fill="#8ab4ff" />
+    <circle cx="75" cy="70" r="2" fill="#b388ff" />
+    <circle cx="70" cy="28" r="1.8" fill="#00d4ff" />
+    <circle cx="32" cy="75" r="1.5" fill="#ffffff" />
+</svg>

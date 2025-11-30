@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solista — Entrenador Vocal Coral</title>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link rel="stylesheet" href="styles.css">
+
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Fuente -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="stars"></div>
+
+    <!-- HEADER -->
+    <header class="py-3 sticky-top">
+        <nav class="container d-flex justify-content-between align-items-center">
+            <a href="#" class="navbar-brand d-flex align-items-center">
+                <svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Orbital ring -->
+                    <circle cx="50" cy="50" r="35" stroke="#8ab4ff" stroke-width="4" opacity="0.6" />
+
+                    <!-- Galaxy swirl -->
+                    <path d="M20 55 Q50 10 80 45" stroke="#00d4ff" stroke-width="3" fill="none" opacity="0.8" />
+                    <path d="M20 45 Q50 90 80 55" stroke="#b388ff" stroke-width="3" fill="none" opacity="0.8" />
+
+                    <!-- Musical note at center -->
+                    <path d="M50 30 V65 
+             A8 8 0 1 0 50 65
+             V30 Z" fill="#ffffff" />
+                    <circle cx="50" cy="70" r="7" fill="#ffffff" />
+
+                    <!-- Star dots -->
+                    <circle cx="25" cy="30" r="2" fill="#8ab4ff" />
+                    <circle cx="75" cy="70" r="2" fill="#b388ff" />
+                    <circle cx="70" cy="28" r="1.8" fill="#00d4ff" />
+                    <circle cx="32" cy="75" r="1.5" fill="#ffffff" />
+                </svg>
+                <span class="brand">Solista</span>
+            </a>
+
+            <ul class="nav gap-3">
+                <li class="nav-item"><a href="#features" class="nav-link text-light">Funcionalidades</a></li>
+                <li class="nav-item"><a href="#how" class="nav-link text-light">Cómo usar</a></li>
+                <li class="nav-item"><a href="demo.html" class="nav-link" style="color:var(--neon-blue);">Comienza tu Viaje Vocal</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- MAIN -->
+    <main class="container">
+        <!-- HERO -->
+        <section id="hero"
+            class="text-center text-light d-flex align-items-center justify-content-center position-relative"
+            style="min-height: 90vh; overflow:hidden;">
+
+            <!-- Animated Notes Background -->
+            <canvas id="musicGalaxy"
+                style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:-1;"></canvas>
+
+            <div>
+                <h1 class="brand brand-big">Entrena tu voz desde tu galaxia personal</h1>
+                <p class="sub mt-3">
+                    Carga tu partitura, elige tu línea vocal y canta. Solista te guía con retroalimentación visual en
+                    tiempo real para que alcances precisión galáctica.
+                </p>
+
+                <a class="btn btn-lg mt-4 px-4" style="background:var(--neon-blue); color:#000; font-weight:600;"
+                    href="demo.html">
+                    <i class="bi bi-stars me-2"></i> Comienza tu viaje vocal
+                </a>
+
+            </div>
+        </section>
+
+
+        <!-- FEATURES -->
+        <section id="features" class="py-5">
+            <h2 class="text-center mb-4" style="color: var(--neon-blue);">Funcionalidades</h2>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card h-100">
+                        <i class="feature-icon bi bi-soundwave"></i>
+                        <h5 class="mt-3">Pitch en tiempo real</h5>
+                        <p class="text-light-50">Mira tu afinación en directo mientras cantas y compárala con la línea
+                            real del MIDI.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="feature-card h-100">
+                        <i class="feature-icon bi bi-music-note-list"></i>
+                        <h5 class="mt-3">Elige tu voz</h5>
+                        <p class="text-light-50">Practica únicamente soprano, alto, tenor o bajo sin distracciones.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="feature-card h-100">
+                        <i class="feature-icon bi bi-graph-up"></i>
+                        <h5 class="mt-3">Análisis final</h5>
+                        <p class="text-light-50">Obtén precisión, errores, notas difíciles y sugerencias para mejorar.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HOW TO -->
+        <!-- HOW TO -->
+        <section id="how" class="py-5 position-relative">
+            <h2 class="text-center mb-5" style="color:var(--neon-purple); font-weight:700;">
+                Cómo usar Solista
+            </h2>
+
+            <div class="container">
+                <div class="row g-4 justify-content-center">
+
+                    <!-- Step 1 -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="feature-card text-center h-100" style="padding:2rem;">
+                            <div class="mb-3">
+                                <span class="step-number">1</span>
+                            </div>
+                            <i class="bi bi-cloud-upload feature-icon mb-3"></i>
+                            <h5>Carga tu archivo</h5>
+                            <p class="text-light-50">Sube tu partitura en formato MIDI y prepárate para el viaje.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="feature-card text-center h-100" style="padding:2rem;">
+                            <div class="mb-3">
+                                <span class="step-number">2</span>
+                            </div>
+                            <i class="bi bi-music-note-beamed feature-icon mb-3"></i>
+                            <h5>Selecciona tu línea</h5>
+                            <p class="text-light-50">Elige si quieres practicar Soprano, Alto, Tenor o Bajo.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="feature-card text-center h-100" style="padding:2rem;">
+                            <div class="mb-3">
+                                <span class="step-number">3</span>
+                            </div>
+                            <i class="bi bi-mic feature-icon mb-3"></i>
+                            <h5>Activa tu micrófono</h5>
+                            <p class="text-light-50">Deja que Solista escuche tu voz y analice tu afinación.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="feature-card text-center h-100" style="padding:2rem;">
+                            <div class="mb-3">
+                                <span class="step-number">4</span>
+                            </div>
+                            <i class="bi bi-stars feature-icon mb-3"></i>
+                            <h5>Empieza a cantar</h5>
+                            <p class="text-light-50">Sigue la línea del piano-roll galáctico y mantente en el tono.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="text-center">
+        <small>Solista © 2025 — Construido para cantantes que vienen de otra galaxia ✦</small>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const canvas = document.getElementById('musicGalaxy');
+        const ctx = canvas.getContext('2d');
+
+        let notes = [];
+        const symbols = ["♪", "♫", "♩", "♬"];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = document.getElementById("hero").offsetHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function createNote() {
+            return {
+                x: Math.random() * canvas.width,
+                y: canvas.height + 40,
+                size: 20 + Math.random() * 30,
+                speed: 0.6 + Math.random() * 0.7,
+                drift: -0.5 + Math.random() * 1,
+                symbol: symbols[Math.floor(Math.random() * symbols.length)],
+                opacity: 0.4 + Math.random() * 0.6,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.01
+            };
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            notes.forEach((n, i) => {
+                ctx.save();
+                ctx.globalAlpha = n.opacity;
+
+                ctx.translate(n.x, n.y);
+                ctx.rotate(n.rotation);
+
+                ctx.font = `${n.size}px serif`;
+                ctx.fillStyle = "rgba(180, 70, 255, 0.9)";  // neon purple
+                ctx.shadowColor = "rgba(140, 50, 255, 1)";
+                ctx.shadowBlur = 15;
+
+                ctx.fillText(n.symbol, -n.size / 2, n.size / 2);
+
+                ctx.restore();
+
+                n.y -= n.speed;
+                n.x += n.drift;
+                n.rotation += n.rotationSpeed;
+
+                if (n.y < -50) notes.splice(i, 1);
+            });
+
+            if (notes.length < 35) notes.push(createNote());
+
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+    </script>
+
+
+</body>
+
+</html>

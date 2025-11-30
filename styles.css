@@ -1,0 +1,268 @@
+:root {
+    --space-bg: #02040f;
+    --nebula-1: #0d003b;
+    --nebula-2: #13002e;
+    --neon-blue: #3bdfff;
+    --neon-purple: #c77dff;
+    --glass: rgba(255, 255, 255, 0.06);
+    --text-soft: #a8b6d1;
+}
+
+body {
+    background: radial-gradient(ellipse at 20% 20%, var(--nebula-1), var(--nebula-2), var(--space-bg));
+    background-attachment: fixed;
+    color: #f1f3ff !important;
+    background-color: var(--space-bg) !important;
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+}
+
+/* Estrellas animadas */
+.stars {
+    position: fixed;
+    width: 200vw;
+    height: 200vh;
+    top: -50%;
+    left: -50%;
+    background: transparent url('https://i.imgur.com/fG9xYfM.png') repeat;
+    background-size: 800px 800px;
+    animation: drift 180s linear infinite;
+    opacity: 0.25;
+    pointer-events: none;
+}
+
+@keyframes drift {
+    from {
+        transform: translate3d(0, 0, 0);
+    }
+
+    to {
+        transform: translate3d(800px, 800px, 0);
+    }
+}
+
+/* Header */
+header {
+    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.45);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.brand {
+    font-size: 1.45rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.brand-big {
+    font-size: 5rem;
+    padding: 0 1em;
+}
+
+/* Hero */
+.hero {
+    padding: 5rem 1rem;
+    text-align: center;
+}
+
+.hero h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.sub {
+    color: var(--text-soft);
+    max-width: 640px;
+    margin: auto;
+    font-size: 1.1rem;
+}
+
+/* Step Number Orb */
+.step-number {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #000;
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+    box-shadow: 0 0 15px rgba(59, 223, 255, 0.35);
+}
+
+/* Glass Cards */
+.feature-card {
+    background: var(--glass);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 1.6rem;
+    transition: 0.25s ease;
+    backdrop-filter: blur(10px);
+}
+
+.feature-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 0 22px rgba(59, 223, 255, 0.25);
+}
+
+.feature-icon {
+    font-size: 2rem;
+    color: var(--neon-blue);
+}
+
+/* Footer */
+footer {
+    padding: 2rem 0;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Estrellas */
+.stars {
+    position: fixed;
+    inset: 0;
+    background: transparent url('https://i.imgur.com/fG9xYfM.png') repeat;
+    background-size: 700px 700px;
+    animation: drift 180s linear infinite;
+    opacity: 0.23;
+    pointer-events: none;
+}
+
+@keyframes drift {
+    from {
+        transform: translate3d(0, 0, 0);
+    }
+
+    to {
+        transform: translate3d(700px, 700px, 0);
+    }
+}
+
+/* Layout general */
+.workspace {
+    height: calc(100vh - 160px);
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.panel {
+    background: var(--panel-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.2rem;
+    backdrop-filter: blur(10px);
+}
+
+.piano-roll {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.roll-grid {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.03),
+            rgba(255, 255, 255, 0.03) 30px,
+            rgba(255, 255, 255, 0.01) 30px,
+            rgba(255, 255, 255, 0.01) 60px);
+}
+
+.title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.btn-neon {
+    background: var(--neon-blue);
+    border: none;
+    color: #000;
+    font-weight: 600;
+}
+
+.btn-neon:hover {
+    background: #2bc9e5;
+}
+
+/* PIANO ROLL: estilos intergalácticos */
+.piano-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.note-rect {
+    rx: 8;
+    transition: transform 180ms ease, opacity 180ms ease;
+    filter: drop-shadow(0 6px 18px rgba(59, 223, 255, 0.06));
+    cursor: pointer;
+}
+
+.note-rect:hover {
+    transform: translateY(-4px) scale(1.02);
+    opacity: 1;
+}
+
+.note-text {
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 12px;
+    fill: rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    font-weight: 600;
+}
+
+.lyric-text {
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 11px;
+    fill: var(--neon-blue);
+    opacity: 0.95;
+    pointer-events: none;
+}
+
+/* Puntero (linea fija) */
+.playhead {
+    stroke: var(--neon-purple);
+    stroke-width: 2px;
+    filter: drop-shadow(0 0 8px rgba(199, 125, 255, 0.28));
+}
+
+/* Keyboard column left */
+.piano-key-col {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 72px;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+    border-right: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* Container adjustments so roll doesn't overflow hidden when animating */
+.piano-roll .viewport {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.piano-roll .content {
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+}
