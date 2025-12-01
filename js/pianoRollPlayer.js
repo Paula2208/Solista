@@ -19,7 +19,7 @@ export function initPianoRollPlayer(notes, svg, container) {
 
 export function playSong() {
     if (!notesGlobal || notesGlobal.length === 0) return;
-    
+
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     audioCtx.resume();
 
@@ -43,37 +43,63 @@ export function stopSong() {
 function playOscillatorNote(n) {
     if (!audioCtx) return;
 
-    // Validar datos
     if (
         !n ||
         typeof n.midi !== "number" ||
         isNaN(n.midi) ||
         typeof n.time !== "number" ||
         typeof n.duration !== "number"
-    ) {
-        console.warn("Nota inválida, se ignora:", n);
-        return;
-    }
+    ) return;
 
-    const freq = midiToFreq(n.midi);
-    if (!isFinite(freq)) {
-        console.warn("Frecuencia no válida para nota:", n);
-        return;
-    }
-
-    const osc = audioCtx.createOscillator();
-    osc.frequency.value = freq;
-
-    const gain = audioCtx.createGain();
-    gain.gain.value = 0.15;
-
-    osc.connect(gain).connect(audioCtx.destination);
-
+    const fundamental = midiToFreq(n.midi);
     const t0 = startTime + n.time;
-    const t1 = startTime + n.time + n.duration;
+    const t1 = t0 + n.duration;
 
+    // ADSR estilo piano suave
+    const attack = 0.003;
+    const decay = 0.18;
+    const sustain = 0.25;
+    const release = 0.25;
+
+    // Oscilador dulce (triangle)
+    const osc = audioCtx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(fundamental, t0);
+
+    // Pequeño "timbre boost" al inicio
+    const harmonicsOsc = audioCtx.createOscillator();
+    harmonicsOsc.type = "sine";
+    harmonicsOsc.frequency.setValueAtTime(fundamental * 2, t0);
+
+    // Ganancia de los armónicos
+    const harmGain = audioCtx.createGain();
+    harmGain.gain.setValueAtTime(0.2, t0);
+    harmGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12); // desaparece rápido
+
+    // Filtro para cuerpo cálido
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(2800, t0); // menos brillante → más piano
+    filter.Q.value = 0.7;
+
+    // Envolvente principal
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(1.0, t0 + attack);         // ataque
+    gain.gain.exponentialRampToValueAtTime(sustain, t0 + decay); // decay
+    gain.gain.setValueAtTime(sustain, t1);                       // sustain
+    gain.gain.exponentialRampToValueAtTime(0.0001, t1 + release);// release
+
+    osc.connect(filter);
+    harmonicsOsc.connect(harmGain).connect(filter);
+
+    filter.connect(gain).connect(audioCtx.destination);
+
+    // Iniciar y parar
     osc.start(t0);
-    osc.stop(t1);
+    harmonicsOsc.start(t0);
+    osc.stop(t1 + release);
+    harmonicsOsc.stop(t1 + 0.15);
 }
 
 
