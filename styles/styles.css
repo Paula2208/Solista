@@ -122,31 +122,32 @@ header {
     top: 12px;
     left: 3%;
     transform: translateX(-50%);
-    
-    background: rgba(0,0,0,0.45);
+
+    background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(6px);
-    
+
     padding: 10px;
     border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.15);
-    
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
     display: flex;
     align-items: center;
     justify-content: center;
 
-    z-index: 9999;
+    z-index: 100001;
     cursor: pointer;
 
     transition: transform 0.2s ease, background 0.2s ease;
 }
 
 #floating-header-btn:hover {
-    background: rgba(255,255,255,0.15);
+    background: rgba(255, 255, 255, 0.15);
     transform: translateX(-50%) scale(1.08);
 }
 
 #floating-header-btn svg {
-    pointer-events: none; /* evita capturar eventos y facilita el click */
+    pointer-events: none;
+    /* evita capturar eventos y facilita el click */
 }
 
 
@@ -196,19 +197,13 @@ footer {
     backdrop-filter: blur(10px);
 }
 
-.piano-roll {
-    border-radius: 12px;
 
+.piano-roll {
     position: relative;
     width: 100%;
-    height: 96vh; /* Ajusta según prefieras */
-    
+    height: 100%;
     overflow-x: scroll;
     overflow-y: scroll;
-
-    border: 1px solid rgba(255,255,255,0.1);
-
-    background: rgba(255,255,255,0.02);
 }
 
 #rollPlaceholder {
@@ -317,4 +312,45 @@ footer {
 .form-check-input:checked {
     background-color: var(--neon-blue);
     border-color: var(--neon-blue);
+}
+
+.piano-roll-container {
+    border-radius: 12px;
+
+    position: relative;
+    width: 100%;
+    height: 96vh;
+    /* Ajusta según prefieras */
+
+    overflow: hidden;
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.playing-line-wrapper {
+    position: absolute;
+    align-items: center;
+    justify-content: flex-end;
+    background-color: rgba(170, 192, 198, 0.1);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    height: 100%;
+    z-index: 9999;
+    pointer-events: none;
+
+    min-width: 10%;
+    width: 8%;
+
+    display: none;
+    /*display: flex;*/
+}
+
+.playing-line {
+    background: #3BDFFF;
+    background: linear-gradient(180deg, rgba(59, 223, 255, 1) 0%, rgba(199, 125, 255, 1) 100%);
+    height: 98%;
+    width: 2px;
+    border-radius: 2px;
 }

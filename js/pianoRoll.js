@@ -24,7 +24,6 @@ export function renderPianoRoll(notes, selectedVoice, containerId = "pianoSvg") 
 
     drawGrid(svg, minMidi, maxMidi, totalTime, width, height);
     drawNotes(svg, notes, minMidi, maxMidi, selectedVoice);
-    drawTimeline(svg, height, totalTime);
 }
 
 // === GRID ===
@@ -116,29 +115,6 @@ function ensureGradient(svg) {
 
     defs.appendChild(grad);
     svg.appendChild(defs);
-}
-
-
-// === TIMELINE ===
-function drawTimeline(svg, height, totalTime) {
-    const line = createSVG("line", {
-        id: "timeline",
-        x1: 0, x2: 0,
-        y1: 0, y2: height,
-        stroke: "red",
-        "stroke-width": 2
-    });
-    svg.appendChild(line);
-
-    // animación
-    const totalPx = totalTime * CONFIG.pxPerBeat;
-    line.style.transition = `transform ${totalTime * 1000}ms linear`;
-    line.style.transform = `translateX(${totalPx}px)`;
-
-    setTimeout(() => {
-        line.style.transition = "none";
-        line.style.transform = "translateX(0)";
-    }, totalTime * 1000 + 200);
 }
 
 // === HELPERS ===

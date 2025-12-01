@@ -47,13 +47,19 @@
     <div class="workspace container-fluid">
 
         <!-- PIANO ROLL -->
-        <div class="piano-roll">
+        <div class="piano-roll-container">
+            <div class="playing-line-wrapper" id="play_line">
+                <div class="playing-line">&nbsp;</div>
+            </div>
             <div class="roll-grid"></div>
-            <svg id="pianoSvg" class="piano-svg"></svg>
 
-            <div id="rollPlaceholder" class="d-flex justify-content-center align-items-center h-100"
-                style="color:var(--text-soft); font-size:1.2rem;">
-                Carga un archivo MusicXML (.musicxml) para comenzar…
+            <div class="piano-roll" style="padding-left: 10%;">
+                <svg id="pianoSvg" class="piano-svg"></svg>
+
+                <div id="rollPlaceholder" class="d-flex justify-content-center align-items-center h-100"
+                    style="color:var(--text-soft); font-size:1.2rem;">
+                    Carga un archivo MusicXML (.musicxml) para comenzar…
+                </div>
             </div>
         </div>
 
@@ -64,9 +70,11 @@
             <h5 class="mb-3">Archivo .musicmxl</h5>
             <input type="file" class="form-control" accept=".musicxml,.xml" id="mxlInput">
 
-            <div class="mt-3" id="fileInfo" style="color:var(--text-soft); font-size:0.9rem;">
+            <div class="mt-3" id="fileInfo" style="color:var(--text-soft); font-size:0.9rem;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 Ningún archivo cargado.
             </div>
+
 
             <hr class="my-4" style="border-color:rgba(255,255,255,0.1);">
 
@@ -175,6 +183,10 @@
 
                     const info = document.getElementById("rollPlaceholder")
                     if (info) info.style.color = 'transparent';
+
+                    const line = document.getElementById("play_line");
+                    console.log(line)
+                    if (line) line.style.display = "flex";
 
                     // === 1. Generar selector dinámico ===
                     const select = document.getElementById("voiceSelect");

@@ -214,6 +214,8 @@ export function applyTempo() {
         tempoFactor = bpm / 120; // 120 = tempo base del MusicXML
     }
 
+    setSoloMode(SOLO_MODE_ACTIVE, SOLO_SELECTED_VOICE);
+
     if(lastPlay) playSong();
 }
 
