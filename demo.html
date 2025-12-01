@@ -18,10 +18,8 @@
 
 <body>
     <!-- HEADER -->
-    <header class="py-3 px-4 d-flex justify-content-between align-items-center"
-        style="background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.1);">
-
-        <a href="#" class="navbar-brand d-flex align-items-center">
+    <header id="floating-header-btn">
+        <a href="index.html">
             <svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <!-- Orbital ring -->
                 <circle cx="50" cy="50" r="35" stroke="#8ab4ff" stroke-width="4" opacity="0.6" />
@@ -42,9 +40,7 @@
                 <circle cx="70" cy="28" r="1.8" fill="#00d4ff" />
                 <circle cx="32" cy="75" r="1.5" fill="#ffffff" />
             </svg>
-            <h1 class="title">Solista</h1>
         </a>
-        <a href="index.html" class="btn btn-outline-light">Volver</a>
     </header>
 
     <!-- WORKSPACE -->
@@ -76,7 +72,6 @@
 
             <h5 class="mb-2">Selecciona tu voz</h5>
             <select id="voiceSelect" class="form-select">
-                <option value="auto">Auto-detectar</option>
                 <option value="soprano">Soprano</option>
                 <option value="alto">Alto</option>
                 <option value="tenor">Tenor</option>
@@ -88,8 +83,8 @@
             <h5 class="mb-2">Controles</h5>
             <div class="d-flex gap-2">
                 <button class="btn btn-neon w-100"><i class="bi bi-mic"></i> Mic</button>
-                <button class="btn btn-outline-light w-100"><i class="bi bi-play-fill"></i></button>
-                <button class="btn btn-outline-light w-100"><i class="bi bi-stop-fill"></i></button>
+                <button id="playBtn" class="btn btn-outline-light w-100"><i class="bi bi-play-fill"></i></button>
+                <button id="stopBtn" class="btn btn-outline-light w-100"><i class="bi bi-stop-fill"></i></button>
             </div>
 
             <hr class="my-4" style="border-color:rgba(255,255,255,0.1);">
@@ -112,12 +107,22 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="./js/pianoRoll.js"></script>
 
     <script type="module">
         import { loadMusicXML, pitchToMidi } from "./js/mxlParser.js";
+        import { renderPianoRoll } from './js/pianoRoll.js';
+        import { initPianoRollPlayer, playSong, stopSong } from "./js/pianoRollPlayer.js";
+
 
         document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById("playBtn").onclick = () => {
+                playSong();
+            };
+
+            document.getElementById("stopBtn").onclick = () => {
+                stopSong();
+            };
+
             document.getElementById("mxlInput").onchange = async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -126,95 +131,64 @@
 
                 try {
                     const score = await loadMusicXML(file);
-                    console.log("Partitura:", score);
+                    console.log("PAUUU Partitura:", score);
 
-                    const notes = score.parts[0].notes;
-                    console.log("Notas extraídas:", notes);
+                    if (!score || !score.parts || !Array.isArray(score.parts) || score.parts.length === 0) return;
 
-                    if (typeof renderPianoRoll === "function") {
-                        renderPianoRoll(notes, {
-                            tempo: 120,
-                            pxPerBeat: 180
-                        });
-                    }
+                    const info = document.getElementById("rollPlaceholder")
+                    if (info) info.style.color = 'transparent';
+
+                    // === 1. Generar selector dinámico ===
+                    const select = document.getElementById("voiceSelect");
+                    select.innerHTML = ""; // limpiar
+
+                    score.parts.forEach((part, i) => {
+                        const option = document.createElement("option");
+                        option.value = i;
+                        option.textContent = part.name ?? `Voz ${i + 1}`;
+                        select.appendChild(option);
+                    });
+
+                    // === 2. Combinar TODAS las voces en un único arreglo ===
+                    const flatten = score.parts.flatMap((part, i) =>
+                        part.notes.map(n => ({
+                            ...n,
+                            voice: i, // importante para colorear
+                            midi: n.midi ?? pitchToMidi(n.step, n.alter, n.octave)
+                        }))
+                    );
+
+                    // Guarda las notas globalmente para re-render según la voz seleccionada
+                    window.__ALL_NOTES__ = flatten;
+
+                    renderPianoRoll(flatten, select.value);
+
+                    // === 3. Re-render cuando cambie la voz seleccionada ===
+                    select.onchange = () => {
+                        renderPianoRoll(window.__ALL_NOTES__, select.value);
+                    };
+
+                    // Inicializar sistema de reproducción + scroll
+                    // Filtrar solo notas válidas
+                    const validNotes = flatten.filter(n =>
+                        n &&
+                        typeof n.midi === "number" &&
+                        !isNaN(n.midi) &&
+                        typeof n.time === "number" &&
+                        typeof n.duration === "number"
+                    );
+
+
+                    const svg = document.getElementById("pianoSvg");
+                    const container = document.querySelector(".piano-roll");
+                    initPianoRollPlayer(validNotes, svg, container);
+
 
                 } catch (err) {
                     console.error("Error:", err);
                     document.getElementById("fileInfo").innerText = "Error cargando el archivo";
                 }
             };
-
-            /* --- Render principal --- */
-            function renderPianoRoll(notes) {
-                const svg = document.getElementById("pianoSvg");
-                const placeholder = document.getElementById("rollPlaceholder");
-                placeholder.style.display = "none";
-
-                svg.innerHTML = "";
-
-                /* 1. Convertir notas a MIDI y buscar rango */
-                const midiNotes = notes.map(n => ({
-                    start: n.time,
-                    dur: n.duration,
-                    midi: pitchToMidi(n.step, n.alter, n.octave)
-                }));
-
-                const minMidi = Math.min(...midiNotes.map(n => n.midi));
-                const maxMidi = Math.max(...midiNotes.map(n => n.midi));
-                const height = svg.clientHeight;
-                const width = svg.clientWidth;
-
-                const rowHeight = height / (maxMidi - minMidi + 1);
-                const timeScale = 120; // px por segundo
-
-                /* 2. Dibujar rectángulos */
-                midiNotes.forEach(n => {
-                    const y = height - (n.midi - minMidi + 1) * rowHeight;
-                    const x = n.start * timeScale;
-                    const w = n.dur * timeScale;
-                    const h = rowHeight * 0.65;
-
-                    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                    rect.setAttribute("x", x);
-                    rect.setAttribute("y", y + (rowHeight - h) / 2);
-                    rect.setAttribute("width", w);
-                    rect.setAttribute("height", h);
-                    rect.setAttribute("class", "note-rect");
-
-                    svg.appendChild(rect);
-                });
-
-                /* 3. Agregar línea de tiempo animada */
-                const pointer = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                pointer.setAttribute("x1", 0);
-                pointer.setAttribute("x2", 0);
-                pointer.setAttribute("y1", 0);
-                pointer.setAttribute("y2", height);
-                pointer.setAttribute("class", "time-pointer");
-                svg.appendChild(pointer);
-
-                animateTimePointer(pointer, width, notes);
-            }
-
-            /* --- Animación suave del puntero temporal --- */
-            function animateTimePointer(pointer, width, notes) {
-                const totalTime = Math.max(...notes.map(n => n.time + n.duration));
-                const totalPx = width;
-                const duration = totalTime * 1000;
-
-                pointer.style.transition = `transform ${duration}ms linear`;
-                pointer.style.transform = `translateX(${totalPx}px)`;
-
-                // Reset si deseas loop
-                setTimeout(() => {
-                    pointer.style.transition = "none";
-                    pointer.style.transform = "translateX(0)";
-                    setTimeout(() => {
-                        pointer.style.transition = `transform ${duration}ms linear`;
-                        pointer.style.transform = `translateX(${totalPx}px)`;
-                    }, 50);
-                }, duration + 500);
-            }
 
         })
     </script>

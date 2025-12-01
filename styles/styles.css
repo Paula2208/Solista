@@ -117,6 +117,39 @@ header {
     color: var(--neon-blue);
 }
 
+#floating-header-btn {
+    position: absolute;
+    top: 12px;
+    left: 3%;
+    transform: translateX(-50%);
+    
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(6px);
+    
+    padding: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.15);
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 9999;
+    cursor: pointer;
+
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+#floating-header-btn:hover {
+    background: rgba(255,255,255,0.15);
+    transform: translateX(-50%) scale(1.08);
+}
+
+#floating-header-btn svg {
+    pointer-events: none; /* evita capturar eventos y facilita el click */
+}
+
+
 /* Footer */
 footer {
     padding: 2rem 0;
@@ -148,7 +181,7 @@ footer {
 
 /* Layout general */
 .workspace {
-    height: calc(100vh - 160px);
+    height: 100vh;
     display: grid;
     grid-template-columns: 1fr 320px;
     gap: 1rem;
@@ -164,11 +197,25 @@ footer {
 }
 
 .piano-roll {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
+
     position: relative;
-    overflow: hidden;
+    width: 100%;
+    height: 96vh; /* Ajusta según prefieras */
+    
+    overflow-x: scroll;
+    overflow-y: scroll;
+
+    border: 1px solid rgba(255,255,255,0.1);
+
+    background: rgba(255,255,255,0.02);
+}
+
+#rollPlaceholder {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    z-index: 5;
 }
 
 .roll-grid {
@@ -176,17 +223,19 @@ footer {
     inset: 0;
     background: repeating-linear-gradient(to bottom,
             rgba(255, 255, 255, 0.03),
-            rgba(255, 255, 255, 0.03) 30px,
-            rgba(255, 255, 255, 0.01) 30px,
-            rgba(255, 255, 255, 0.01) 60px);
+            rgba(255, 255, 255, 0.03) 26px,
+            rgba(255, 255, 255, 0.01) 23px,
+            rgba(255, 255, 255, 0.01) 46px);
 }
 
 .title {
-    font-size: 1.6rem;
+    font-size: 1.3rem;
     font-weight: 700;
     background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
     -webkit-background-clip: text;
     color: transparent;
+    margin: 0 !important;
+    cursor: pointer;
 }
 
 .btn-neon {
@@ -202,10 +251,8 @@ footer {
 
 /* PIANO ROLL: estilos intergalácticos */
 .piano-svg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    display: block;
+    overflow: visible;
 }
 
 .note-rect {
