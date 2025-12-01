@@ -78,6 +78,26 @@
                 <option value="bajo">Bajo</option>
             </select>
 
+            <div class="form-check form-switch mt-3 px-1"
+                style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 10px 14px; padding-left: 20% !important;">
+                <input class="form-check-input" type="checkbox" id="soloVoiceToggle" style="cursor:pointer;">
+                <label class="form-check-label ms-1" for="soloVoiceToggle"
+                    style="cursor: pointer; color:var(--text-soft); font-size:0.9rem;">
+                    Modo Solista
+                </label>
+            </div>
+
+
+            <hr class="my-4" style="border-color:rgba(255,255,255,0.1);">
+
+            <h5 class="mb-2">Tempo</h5>
+
+            <div class="d-flex gap-2 justify-content-center align-items-center">
+                <input id="tempoInput" type="number" value="120" min="20" max="300"
+                    style="border-radius: 8px; outline: none; border: none; padding: 6px 12px;"> BPM
+                <button id="tempoButton" class="btn btn-outline-light w-100">Cambiar Tempo</button>
+            </div>
+
             <hr class="my-4" style="border-color:rgba(255,255,255,0.1);">
 
             <h5 class="mb-2">Controles</h5>
@@ -85,6 +105,8 @@
                 <button class="btn btn-neon w-100"><i class="bi bi-mic"></i> Mic</button>
                 <button id="playBtn" class="btn btn-outline-light w-100"><i class="bi bi-play-fill"></i></button>
                 <button id="stopBtn" class="btn btn-outline-light w-100"><i class="bi bi-stop-fill"></i></button>
+                <button id="restartBtn" class="btn btn-outline-light w-100"><i
+                        class="bi bi-arrow-counterclockwise"></i></button>
             </div>
 
             <hr class="my-4" style="border-color:rgba(255,255,255,0.1);">
@@ -111,17 +133,31 @@
     <script type="module">
         import { loadMusicXML, pitchToMidi } from "./js/mxlParser.js";
         import { renderPianoRoll } from './js/pianoRoll.js';
-        import { initPianoRollPlayer, playSong, stopSong } from "./js/pianoRollPlayer.js";
+        import { initPianoRollPlayer, playSong, stopSong, restartSong, applyTempo, setSoloMode } from "./js/pianoRollPlayer.js";
 
 
         document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById("playBtn").onclick = () => {
-                playSong();
+            document.getElementById("playBtn").onclick = playSong;
+            document.getElementById("stopBtn").onclick = stopSong;
+            document.getElementById("restartBtn").onclick = restartSong;
+            document.getElementById("tempoButton").onclick = applyTempo;
+
+            document.getElementById("soloVoiceToggle").onchange = () => {
+                const isSolo = document.getElementById("soloVoiceToggle").checked;
+                const selectedVoice = Number(document.getElementById("voiceSelect").value);
+
+                setSoloMode(isSolo, selectedVoice);
             };
 
-            document.getElementById("stopBtn").onclick = () => {
-                stopSong();
-            };
+            const voiceSelect = document.getElementById("voiceSelect");
+
+            voiceSelect.addEventListener("change", () => {
+                const selected = Number(document.getElementById("voiceSelect").value);
+                renderPianoRoll(window.__ALL_NOTES__, selected);
+                const isSolo = document.getElementById("soloVoiceToggle").checked;
+                setSoloMode(isSolo, selected);
+            });
+
 
             document.getElementById("mxlInput").onchange = async (e) => {
                 const file = e.target.files[0];
@@ -131,9 +167,11 @@
 
                 try {
                     const score = await loadMusicXML(file);
-                    console.log("PAUUU Partitura:", score);
+                    console.log("Partitura:", score);
 
                     if (!score || !score.parts || !Array.isArray(score.parts) || score.parts.length === 0) return;
+
+                    const totalVoices = score.parts.length ?? 0;
 
                     const info = document.getElementById("rollPlaceholder")
                     if (info) info.style.color = 'transparent';
@@ -181,7 +219,7 @@
 
                     const svg = document.getElementById("pianoSvg");
                     const container = document.querySelector(".piano-roll");
-                    initPianoRollPlayer(validNotes, svg, container);
+                    initPianoRollPlayer(validNotes, svg, container, totalVoices);
 
 
                 } catch (err) {

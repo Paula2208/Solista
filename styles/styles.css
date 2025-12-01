@@ -313,3 +313,8 @@ footer {
     transform: translate3d(0, 0, 0);
     will-change: transform;
 }
+
+.form-check-input:checked {
+    background-color: var(--neon-blue);
+    border-color: var(--neon-blue);
+}
