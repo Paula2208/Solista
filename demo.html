@@ -110,7 +110,7 @@
 
             <h5 class="mb-2">Controles</h5>
             <div class="d-flex gap-2">
-                <button class="btn btn-neon w-100"><i class="bi bi-mic"></i> Mic</button>
+                <button class="btn btn-outline-light w-100" id="mic"><i class="bi bi-mic"></i> Mic</button>
                 <button id="playBtn" class="btn btn-outline-light w-100"><i class="bi bi-play-fill"></i></button>
                 <button id="stopBtn" class="btn btn-outline-light w-100"><i class="bi bi-stop-fill"></i></button>
                 <button id="restartBtn" class="btn btn-outline-light w-100"><i
@@ -142,13 +142,64 @@
         import { loadMusicXML, pitchToMidi } from "./js/mxlParser.js";
         import { renderPianoRoll } from './js/pianoRoll.js';
         import { initPianoRollPlayer, playSong, stopSong, restartSong, applyTempo, setSoloMode } from "./js/pianoRollPlayer.js";
+        import { startMic, stopMic } from "./js/voice.js";
 
 
         document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById("playBtn").onclick = playSong;
-            document.getElementById("stopBtn").onclick = stopSong;
-            document.getElementById("restartBtn").onclick = restartSong;
+
+            let micOn = false;
+
+            const micBtn = document.getElementById("mic");
+            const playBtn = document.getElementById("playBtn");
+            const stopBtn = document.getElementById("stopBtn");
+
+            playBtn.onclick = () => {
+                stopBtn.classList.remove("btn-neon");
+                stopBtn.classList.add("btn-outline-light");
+
+                playBtn.classList.add("btn-neon");
+                playBtn.classList.remove("btn-outline-light");
+
+                playSong();
+            };
+            stopBtn.onclick = () => {
+                stopBtn.classList.add("btn-neon");
+                stopBtn.classList.remove("btn-outline-light");
+
+                playBtn.classList.remove("btn-neon");
+                playBtn.classList.add("btn-outline-light");
+
+                stopSong();
+            };
+
+            document.getElementById("restartBtn").onclick = () => {
+                stopBtn.classList.remove("btn-neon");
+                stopBtn.classList.add("btn-outline-light");
+
+                playBtn.classList.add("btn-neon");
+                playBtn.classList.remove("btn-outline-light");
+
+                restartSong();
+            };
+
             document.getElementById("tempoButton").onclick = applyTempo;
+
+            micBtn.onclick = () => {
+                micBtn.classList.add("btn-neon");
+                micBtn.classList.remove("btn-outline-light");
+
+                if (micOn) {
+                    micBtn.classList.remove("btn-neon");
+                    micBtn.classList.add("btn-outline-light");
+                    stopMic();
+                }
+                else {
+                    micOn = true;
+                    micBtn.classList.add("btn-neon");
+                    micBtn.classList.remove("btn-outline-light");
+                    startMic();
+                }
+            }
 
             document.getElementById("soloVoiceToggle").onchange = () => {
                 const isSolo = document.getElementById("soloVoiceToggle").checked;
@@ -168,6 +219,7 @@
 
 
             document.getElementById("mxlInput").onchange = async (e) => {
+                micOn = false;
                 const file = e.target.files[0];
                 if (!file) return;
 
