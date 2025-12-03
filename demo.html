@@ -148,6 +148,7 @@
         import { loadMusicXML, pitchToMidi } from "./js/mxlParser.js";
         import { renderPianoRoll } from './js/pianoRoll.js';
         import { initPianoRollPlayer, playSong, stopSong, restartSong, applyTempo, setSoloMode } from "./js/pianoRollPlayer.js";
+        import { startMic, stopMic } from "./js/voice.js";
 
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -188,27 +189,25 @@
                 restartSong();
             };
 
+            document.getElementById("tempoButton").onclick = applyTempo;
+
             micBtn.onclick = () => {
+                micBtn.classList.add("btn-neon");
+                micBtn.classList.remove("btn-outline-light");
 
                 if (receivingVoice) {
+                    receivingVoice = false;
                     micBtn.classList.remove("btn-neon");
                     micBtn.classList.add("btn-outline-light");
-
-                    receivingVoice = false;
-
-                    // Pendiente función de apagar micrófono
+                    stopMic();
                 }
                 else {
+                    receivingVoice = true;
                     micBtn.classList.add("btn-neon");
                     micBtn.classList.remove("btn-outline-light");
-
-                    receivingVoice = true;
-
-                    // Pendiente función de prender micrófono
+                    startMic();
                 }
-            };
-
-            document.getElementById("tempoButton").onclick = applyTempo;
+            }
 
             document.getElementById("soloVoiceToggle").onchange = () => {
                 const isSolo = document.getElementById("soloVoiceToggle").checked;
@@ -228,6 +227,7 @@
 
 
             document.getElementById("mxlInput").onchange = async (e) => {
+                receivingVoice = false;
                 const file = e.target.files[0];
                 if (!file) return;
 
