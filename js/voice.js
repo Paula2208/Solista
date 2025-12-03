@@ -1,0 +1,1 @@
+// Pendiente recibir la voz y ver la afinación respecto a la nota de la voz seleccioanda

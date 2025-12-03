@@ -51,9 +51,15 @@
             <div class="playing-line-wrapper" id="play_line">
                 <div class="playing-line">&nbsp;</div>
             </div>
+            <div class="singing-line-wrapper" id="sing_line">
+                <div class="singing-line">
+                    <div class="singing-line__point">&nbsp;</div>
+                    <div class="singing-line__line">&nbsp;</div>
+                </div>
+            </div>
             <div class="roll-grid"></div>
 
-            <div class="piano-roll" style="padding-left: 10%;">
+            <div class="piano-roll" style="padding-left: 15%;">
                 <svg id="pianoSvg" class="piano-svg"></svg>
 
                 <div id="rollPlaceholder" class="d-flex justify-content-center align-items-center h-100"
@@ -110,7 +116,7 @@
 
             <h5 class="mb-2">Controles</h5>
             <div class="d-flex gap-2">
-                <button class="btn btn-neon w-100"><i class="bi bi-mic"></i> Mic</button>
+                <button id="micBtn" class="btn btn-outline-light w-100"><i class="bi bi-mic"></i> Mic</button>
                 <button id="playBtn" class="btn btn-outline-light w-100"><i class="bi bi-play-fill"></i></button>
                 <button id="stopBtn" class="btn btn-outline-light w-100"><i class="bi bi-stop-fill"></i></button>
                 <button id="restartBtn" class="btn btn-outline-light w-100"><i
@@ -145,9 +151,63 @@
 
 
         document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById("playBtn").onclick = playSong;
-            document.getElementById("stopBtn").onclick = stopSong;
-            document.getElementById("restartBtn").onclick = restartSong;
+            let receivingVoice = false;
+
+            const playBtn = document.getElementById("playBtn");
+            const stopBtn = document.getElementById("stopBtn");
+            const restartBtn = document.getElementById("restartBtn");
+            const micBtn = document.getElementById("micBtn");
+
+            playBtn.onclick = () => {
+                playBtn.classList.add("btn-neon");
+                playBtn.classList.remove("btn-outline-light");
+
+                stopBtn.classList.remove("btn-neon");
+                stopBtn.classList.add("btn-outline-light");
+                playSong();
+            };
+
+
+            stopBtn.onclick = () => {
+                playBtn.classList.remove("btn-neon");
+                playBtn.classList.add("btn-outline-light");
+
+                stopBtn.classList.add("btn-neon");
+                stopBtn.classList.remove("btn-outline-light");
+
+                stopSong();
+            };
+
+            restartBtn.onclick = () => {
+                playBtn.classList.add("btn-neon");
+                playBtn.classList.remove("btn-outline-light");
+
+                stopBtn.classList.remove("btn-neon");
+                stopBtn.classList.add("btn-outline-light");
+
+                restartSong();
+            };
+
+            micBtn.onclick = () => {
+
+                if (receivingVoice) {
+                    micBtn.classList.remove("btn-neon");
+                    micBtn.classList.add("btn-outline-light");
+
+                    receivingVoice = false;
+
+                    // Pendiente función de apagar micrófono
+                }
+                else {
+                    micBtn.classList.add("btn-neon");
+                    micBtn.classList.remove("btn-outline-light");
+
+                    receivingVoice = true;
+
+                    // Pendiente función de prender micrófono
+                }
+            };
+
             document.getElementById("tempoButton").onclick = applyTempo;
 
             document.getElementById("soloVoiceToggle").onchange = () => {
@@ -185,8 +245,10 @@
                     if (info) info.style.color = 'transparent';
 
                     const line = document.getElementById("play_line");
-                    console.log(line)
                     if (line) line.style.display = "flex";
+
+                    const lineSing = document.getElementById("sing_line");
+                    if (lineSing) lineSing.style.display = "flex";
 
                     // === 1. Generar selector dinámico ===
                     const select = document.getElementById("voiceSelect");
