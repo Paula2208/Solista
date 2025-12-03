@@ -360,7 +360,6 @@ footer {
     align-items: center;
     justify-content: center;
     background-color: transparent;
-    height: 100%;
     z-index: 9999;
     pointer-events: none;
 

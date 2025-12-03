@@ -1,7 +1,13 @@
 // ====================================================================
 //  pianoRollPlayer.js — Controla la reproducción y el scroll automático
 // ====================================================================
+import { midiToYAbsolute } from "./pianoRoll.js";
+import { getCurrentTargetNote, getFirstTargetNote } from "./voice.js";
+
+window.midiToYAbsolute = midiToYAbsolute;
+
 let tempoFactor = 1; // 1 = normal
+window.__TEMPO_FACTOR__ = 1;
 
 let audioCtx = null;
 let startTime = null;
@@ -15,7 +21,7 @@ let rafId = null;           // <-- requestAnimationFrame
 let notesGlobal = [];
 let svgElement = null;
 let scrollContainer = null;
-let pixelsPerSecond = 120;   // VELOCIDAD DE SCROLL (depende de los BPM)
+let pixelsPerSecond = parseInt(window.__TEMPO__);   // VELOCIDAD DE SCROLL (depende de los BPM)
 
 // Solo Mode
 
@@ -25,6 +31,13 @@ let SOLO_MODE_ACTIVE = false;
 let SOLO_SELECTED_VOICE = 0;
 let SOLO_OTHER_VOLUME = 0.15;
 let SOLO_MAIN_VOLUME = 1.0;
+
+window.__TARGET_MIDI__ = null;   // nota objetivo actual
+window.__USER_MIDI__ = null;     // nota detectada por el micrófono
+window.__SELECTED_VOICE__ = 0;
+window.__ALL_NOTES__ = [];
+window.__VOICE_NOTES__ = []; // Only selected voice
+
 
 export function initVoiceGains(totalVoices) {
     voiceGainNodes = [];
@@ -44,6 +57,9 @@ export function initPianoRollPlayer(notes, svg, container, totalVoices) {
     svgElement = svg;
     scrollContainer = container;
 
+    window.__ALL_NOTES__ = notes;
+    getFirstTargetNote();
+
     if (!audioCtx) audioCtx = new AudioContext();
 
     initVoiceGains(totalVoices);
@@ -57,6 +73,8 @@ export function playSong() {
     startTime = audioCtx.currentTime - currentTimeOffset;
     isPlaying = true;
 
+    getFirstTargetNote();
+
     scheduleNotes();
     startScroll();
 }
@@ -66,8 +84,9 @@ export function stopSong() {
     isPlaying = false;
 
     currentTimeOffset = audioCtx.currentTime - startTime;
+    window.lastIndex = 0; // Porque PlayPianoLike guardará solo las que le falte reproducir
 
-    clearAudioNodes(); // mata osciladores y animación pero guarda offset
+    clearAudioNodes();
 }
 
 
@@ -81,12 +100,20 @@ export function restartSong() {
 
 function scheduleNotes() {
     const ctx = audioCtx;
+    const allNotesVoiceFixedTime = []
 
     notesGlobal.forEach(note => {
         const noteStart = startTime + (note.time / tempoFactor);
         const now = ctx.currentTime;
 
         if (noteStart >= now - 0.05) {
+            
+            if(`${window.__SELECTED_VOICE__}` === `${note.voice}`) allNotesVoiceFixedTime.push({
+                ...note,
+                start: noteStart,
+                end: noteStart + note.duration
+            })
+
             playNotePianoLike(
                 midiToFreq(note.midi),
                 noteStart,
@@ -95,6 +122,8 @@ function scheduleNotes() {
             );
         }
     });
+
+    window.__VOICE_NOTES__ = allNotesVoiceFixedTime;
 }
 
 function startScroll() {
@@ -105,7 +134,16 @@ function startScroll() {
 
         const t = audioCtx.currentTime - start + currentTimeOffset;
 
+        window.__CURRENT_PLAY_POS__ = t;
+
         scrollContainer.scrollLeft = t * pixelsPerSecond * tempoFactor;
+
+        const target = getCurrentTargetNote();
+        if (target) {
+            window.__TARGET_MIDI__ = target.midi;
+            document.getElementById("targetNote").innerText = target.name;
+        }
+
         rafId = requestAnimationFrame(step);
     }
 
@@ -144,6 +182,7 @@ function clearAudioNodes() {
 
 
 function playNotePianoLike(freq, t0, dur, noteObj) {
+
     const ctx = audioCtx;
     const t1 = t0 + dur;
 
@@ -207,26 +246,32 @@ export function applyTempo() {
 
     isPlaying = false;
     currentTimeOffset = 0;
+    window.lastIndex = 0;
     clearAudioNodes();
 
     const bpm = parseFloat(document.getElementById("tempoInput").value);
     if (!isNaN(bpm) && bpm > 0) {
-        tempoFactor = bpm / 120; // 120 = tempo base del MusicXML
+        tempoFactor = bpm / parseInt(window.__TEMPO__);
+        window.previewNote = bpm * window.__NOTE_PREVIEW_FACTOR__;
     }
+
+    window.__TEMPO_FACTOR__ = tempoFactor;
 
     setSoloMode(SOLO_MODE_ACTIVE, SOLO_SELECTED_VOICE);
 
-    if(lastPlay) playSong();
+    if (lastPlay) playSong();
 }
 
 export function setSoloMode(isSolo, selectedVoice) {
     SOLO_MODE_ACTIVE = isSolo;
     SOLO_SELECTED_VOICE = selectedVoice;
+    window.__SELECTED_VOICE__ = selectedVoice;
 
     let lastPlay = isPlaying;
 
     isPlaying = false;
     currentTimeOffset = 0;
+    window.lastIndex = 0;
     clearAudioNodes();
 
     voiceGainNodes.forEach((g, i) => {
@@ -237,5 +282,30 @@ export function setSoloMode(isSolo, selectedVoice) {
         }
     });
 
-    if(lastPlay) playSong();
+    if (lastPlay) playSong();
 }
+
+// ==============================================
+// CONTROL DEL SING_LINE según NOTA OBJETIVO
+// ==============================================
+
+window.updateSingingLine = function () {
+    if (window.__TARGET_MIDI__ == null || window.__USER_MIDI__ == null) return;
+
+    const sing = document.getElementById("sing_line");
+    if (!sing) return;
+
+    const minMidi = window.__MIN_MIDI__;
+    const maxMidi = window.__MAX_MIDI__;
+
+    // Posición correcta del usuario en Y
+    const yUser = window.midiToYAbsolute(window.__USER_MIDI__, minMidi, maxMidi);
+
+    // Mover la línea EXACTAMENTE a ese Y
+    sing.style.transform = `translateY(${yUser}px)`;
+
+    // Mostrar diferencia (opcional)
+    const diff = window.__USER_MIDI__ - window.__TARGET_MIDI__;
+    document.getElementById("diffData").innerText = diff.toFixed(2);
+};
+

@@ -1,6 +1,7 @@
+
 // === CONFIG ===
 const CONFIG = {
-    pxPerBeat: 120,   // Ancho por pulso
+    pxPerBeat: parseInt(window.__TEMPO__),   // Ancho por pulso
     noteHeight: 23,   // Alto por nota MIDI
     topPadding: 5,
     leftPadding: 10
@@ -14,6 +15,10 @@ export function renderPianoRoll(notes, selectedVoice, containerId = "pianoSvg") 
 
     const minMidi = Math.min(...notes.filter(n => n.type === "note").map(n => n.midi));
     const maxMidi = Math.max(...notes.filter(n => n.type === "note").map(n => n.midi));
+
+    window.__MIN_MIDI__ = minMidi;
+    window.__MAX_MIDI__ = maxMidi;
+    window.__SELECTED_VOICE__ = selectedVoice;
 
     const totalTime = Math.max(...notes.map(n => n.time + n.duration));
     const width = totalTime * CONFIG.pxPerBeat + 200;
@@ -126,4 +131,12 @@ function createSVG(type, attrs) {
 
 function getY(midi, minMidi, maxMidi) {
     return (maxMidi - midi) * CONFIG.noteHeight + CONFIG.topPadding;
+}
+
+// Conversión global para que el micrófono pueda usar la misma escala
+
+const escalaMientras = 10;
+
+export function midiToYAbsolute(midi, minMidi, maxMidi) {
+    return ((maxMidi - midi) * CONFIG.noteHeight + CONFIG.topPadding) - escalaMientras;
 }

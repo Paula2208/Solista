@@ -235,11 +235,17 @@
 
                 try {
                     const score = await loadMusicXML(file);
-                    console.log("Partitura:", score);
+                    // console.log("Sheet:", score);
 
                     if (!score || !score.parts || !Array.isArray(score.parts) || score.parts.length === 0) return;
 
+                    window.__TEMPO__ = parseInt(score.tempo);
+
                     const totalVoices = score.parts.length ?? 0;
+
+                    const tempo = document.getElementById("tempoInput");
+                    if(tempo) tempo.value = window.__TEMPO__;
+                    window.previewNote = parseInt(window.__TEMPO__) * window.__NOTE_PREVIEW_FACTOR__;
 
                     const info = document.getElementById("rollPlaceholder")
                     if (info) info.style.color = 'transparent';

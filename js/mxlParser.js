@@ -1,15 +1,24 @@
 // -------------------------------
 // CARGAR Y PARSEAR MUSICXML
 // -------------------------------
+window.__TEMPO__ = 120; 
 
 export async function loadMusicXML(file) {
   const xmlText = await file.text();
   const parser = new DOMParser();
   const xml = parser.parseFromString(xmlText, "application/xml");
 
-  const parts = [...xml.querySelectorAll("part")].map(p => parsePart(p, xml));
+  // Leer tempo global (si existe)
+  const soundNode = xml.querySelector("sound[tempo]");
+  const tempo = soundNode ? parseFloat(soundNode.getAttribute("tempo")) : 120;
 
-  return { parts };
+  const secondsPerBeat = 60 / tempo;
+
+  const parts = [...xml.querySelectorAll("part")].map(p =>
+    parsePart(p, xml, secondsPerBeat)
+  );
+
+  return { parts, tempo };
 }
 
 // --------------------------------
@@ -23,11 +32,11 @@ export function pitchToMidi(step, alter, octave) {
 // --------------------------------
 // PARSEAR UNA PARTE
 // --------------------------------
-function parsePart(partNode, xml) {
+function parsePart(partNode, xml, secondsPerBeat) {
   const measures = [...partNode.querySelectorAll("measure")];
   let notes = [];
   let divisions = 1;
-  let currentTime = 0; // <-- Nuevo: tiempo acumulado
+  let currentTime = 0; // tiempo en BEATS
 
   for (const m of measures) {
     const divNode = m.querySelector("divisions");
@@ -37,7 +46,9 @@ function parsePart(partNode, xml) {
 
     for (const n of measureNotes) {
       const durationNode = n.querySelector("duration");
-      const duration = durationNode ? parseInt(durationNode.textContent) / divisions : 1;
+      const durationBeats = durationNode
+        ? parseInt(durationNode.textContent) / divisions
+        : 1;
 
       const lyricNode = n.querySelector("lyric > text");
       const lyric = lyricNode ? lyricNode.textContent : null;
@@ -45,15 +56,19 @@ function parsePart(partNode, xml) {
       // ----------------------------
       // ES UN SILENCIO
       // ----------------------------
-      const restNode = n.querySelector("rest");
-      if (restNode) {
+      if (n.querySelector("rest")) {
+        const startSec = currentTime * secondsPerBeat;
+        const endSec = startSec + durationBeats * secondsPerBeat;
+
         notes.push({
           type: "rest",
-          duration,
-          time: currentTime  // <-- agregado
+          duration: durationBeats,
+          time: currentTime,      // beats
+          start: startSec,        // segundos
+          end: endSec
         });
 
-        currentTime += duration;
+        currentTime += durationBeats;
         continue;
       }
 
@@ -67,20 +82,25 @@ function parsePart(partNode, xml) {
       const alter = parseInt(pitchNode.querySelector("alter")?.textContent ?? 0);
       const octave = parseInt(pitchNode.querySelector("octave")?.textContent ?? null);
 
-      const midi = pitchToMidi(step, alter, octave);  // <-- Nuevo
+      const midi = pitchToMidi(step, alter, octave);
+
+      const startSec = currentTime * secondsPerBeat;
+      const endSec = startSec + durationBeats * secondsPerBeat;
 
       notes.push({
         type: "note",
         step,
         alter,
         octave,
-        midi,         // <-- agregado
-        duration,
-        time: currentTime, // <-- agregado
+        midi,
+        duration: durationBeats,
+        time: currentTime,   // beats
+        start: startSec,     // segundos
+        end: endSec,
         lyric
       });
 
-      currentTime += duration;
+      currentTime += durationBeats;
     }
   }
 

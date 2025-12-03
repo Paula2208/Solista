@@ -8,10 +8,20 @@ let micStream;
 let freqData = new Float32Array(2048);
 
 let running = false;
+window.lastIndex = 0;
+window.noteEnded = false;
+
+window.__NOTE_PREVIEW_FACTOR__ = 0.5/120;
+
+window.previewNote = 0.5;
 
 const pitchText = document.getElementById("pitchData");
-const diffText  = document.getElementById("diffData");
-const targetText = document.getElementById("targetNote");
+
+// ----------------------------
+// GLOBAL LINK WITH PIANO ROLL
+// ----------------------------
+window.__USER_MIDI__ = null;     // nota detectada por mic
+window.__TARGET_MIDI__ = null;   // nota objetivo actual
 
 // ----------------------------
 // 1. START / STOP MIC
@@ -53,15 +63,9 @@ function loop() {
         const midi = freqToMidi(freq);
         const name = midiToNoteName(midi);
 
-        pitchText.textContent = `${freq.toFixed(1)} Hz (${name})`;
+        window.__USER_MIDI__ = midi;
 
-        let target = getCurrentTargetNote();
-        if (target) {
-            targetText.textContent = target.name;
-            const diff = getCentsDiff(freq, midiToFreq(target.midi));
-            diffText.textContent = diff.toFixed(1) + " cents";
-            updatePitchLine(diff, target.midi);
-        }
+        pitchText.textContent = `${freq.toFixed(1)} Hz (${name})`;
     }
 
     requestAnimationFrame(loop);
@@ -74,7 +78,6 @@ function detectPitch(buffer, sampleRate) {
 
     let threshold = 0.10;
     let tau = 0;
-    let minTau = 0;
 
     let yin = new Float32Array(buffer.length / 2);
 
@@ -124,12 +127,12 @@ function midiToFreq(m) {
 }
 
 function midiToNoteName(m) {
-    const names = ["Do", "Do#", "Re", "Re#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"];
-    return names[m % 12] + Math.floor(m / 12);
+    const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    return names[m % 12] + (Math.floor(m / 12) - 1);
 }
 
 // ----------------------------
-// 5. CENTS DIFFERENCE
+// 5. CENTS DIFFERENCE (solo si lo necesitas)
 // ----------------------------
 function getCentsDiff(freq, targetFreq) {
     return 1200 * Math.log2(freq / targetFreq);
@@ -138,19 +141,61 @@ function getCentsDiff(freq, targetFreq) {
 // ----------------------------
 // 6. LINK WITH PIANO-ROLL
 // ----------------------------
-// Buscar la nota actual del piano-roll según la línea vertical azul
-function getCurrentTargetNote() {
-    if (!window.__CURRENT_PLAY_POS__ || !window.__ALL_NOTES__) return null;
+
+export function getCurrentTargetNote() {
+    if (window.__CURRENT_PLAY_POS__ == null) return null;
+
+    if (window.lastIndex == null) window.lastIndex = 0;
 
     const t = window.__CURRENT_PLAY_POS__;
+    const notes = window.__VOICE_NOTES__;
 
-    for (const note of window.__ALL_NOTES__) {
-        if (t >= note.start && t <= note.end) {
-            return {
-                midi: note.midi,
-                name: midiToNoteName(note.midi)
-            };
-        }
+    if (!notes || notes.length === 0) return null;
+
+    const idx = window.lastIndex;
+    const note = notes[idx];
+    if (!note) return null;
+
+    console.log(window.previewNote)
+
+    const nextNote = notes[idx + 1];
+    if (!nextNote) return {
+        midi: note.midi,
+        name: midiToNoteName(note.midi),
+        start: note.start,
+        end: note.end
+    };
+
+    // ---- 2. Detectar INICIO de nueva nota (transición) ----
+    if (nextNote && t + window.previewNote >= nextNote.start) {
+        window.lastIndex = idx + 1;
+
+        return {
+            midi: nextNote.midi,
+            name: midiToNoteName(nextNote.midi),
+            start: nextNote.start,
+            end: nextNote.end
+        };
+    }
+
+    if (note && t + window.previewNote >= note.start) {
+        return {
+            midi: note.midi,
+            name: midiToNoteName(note.midi),
+            start: note.start,
+            end: note.end
+        };
+    }
+
+    return null;
+}
+
+
+export function getFirstTargetNote() {
+    for (let note in window.__ALL_NOTES__) {
+        if (`${window.__SELECTED_VOICE__}` !== `${note.voice}`) continue;
+        document.getElementById("targetNote").innerText = midiToNoteName(note.midi);
+        return note;
     }
     return null;
 }
