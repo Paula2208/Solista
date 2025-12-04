@@ -38,6 +38,12 @@ window.__SELECTED_VOICE__ = 0;
 window.__ALL_NOTES__ = [];
 window.__VOICE_NOTES__ = []; // Only selected voice
 
+window.getPreviewTime = function() {
+    const bpm = parseFloat(document.getElementById("tempoInput").value) || parseInt(window.__TEMPO__);
+    const beatsAhead = window.__NOTE_PREVIEW_FACTOR__ || 0.1; // 10% de un beat
+    return beatsAhead * (60 / bpm);
+};
+
 
 export function initVoiceGains(totalVoices) {
     voiceGainNodes = [];
@@ -252,7 +258,6 @@ export function applyTempo() {
     const bpm = parseFloat(document.getElementById("tempoInput").value);
     if (!isNaN(bpm) && bpm > 0) {
         tempoFactor = bpm / parseInt(window.__TEMPO__);
-        window.previewNote = bpm * window.__NOTE_PREVIEW_FACTOR__;
     }
 
     window.__TEMPO_FACTOR__ = tempoFactor;
@@ -291,7 +296,6 @@ export function setSoloMode(isSolo, selectedVoice) {
 
 window.updateSingingLine = function () {
     if (window.__TARGET_MIDI__ == null || window.__USER_MIDI__ == null) return;
-
     const sing = document.getElementById("sing_line");
     if (!sing) return;
 

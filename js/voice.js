@@ -6,14 +6,10 @@ let audioCtx;
 let analyser;
 let micStream;
 let freqData = new Float32Array(2048);
+window.__NOTE_PREVIEW_FACTOR__ = 0.5/120;
 
 let running = false;
 window.lastIndex = 0;
-window.noteEnded = false;
-
-window.__NOTE_PREVIEW_FACTOR__ = 0.5/120;
-
-window.previewNote = 0.5;
 
 const pitchText = document.getElementById("pitchData");
 
@@ -66,6 +62,8 @@ function loop() {
         window.__USER_MIDI__ = midi;
 
         pitchText.textContent = `${freq.toFixed(1)} Hz (${name})`;
+
+        window.updateSingingLine();
     }
 
     requestAnimationFrame(loop);
@@ -156,8 +154,6 @@ export function getCurrentTargetNote() {
     const note = notes[idx];
     if (!note) return null;
 
-    console.log(window.previewNote)
-
     const nextNote = notes[idx + 1];
     if (!nextNote) return {
         midi: note.midi,
@@ -166,8 +162,10 @@ export function getCurrentTargetNote() {
         end: note.end
     };
 
+    const preview = window.getPreviewTime();
+
     // ---- 2. Detectar INICIO de nueva nota (transición) ----
-    if (nextNote && t + window.previewNote >= nextNote.start) {
+    if (nextNote && t + preview >= nextNote.start) {
         window.lastIndex = idx + 1;
 
         return {
@@ -178,7 +176,7 @@ export function getCurrentTargetNote() {
         };
     }
 
-    if (note && t + window.previewNote >= note.start) {
+    if (note && t + preview >= note.start) {
         return {
             midi: note.midi,
             name: midiToNoteName(note.midi),
@@ -192,10 +190,19 @@ export function getCurrentTargetNote() {
 
 
 export function getFirstTargetNote() {
-    for (let note in window.__ALL_NOTES__) {
+    for (const note of window.__ALL_NOTES__) {
         if (`${window.__SELECTED_VOICE__}` !== `${note.voice}`) continue;
+
         document.getElementById("targetNote").innerText = midiToNoteName(note.midi);
-        return note;
+
+        window.__TARGET_MIDI__ = note.midi;
+
+        return {
+            midi: note.midi,
+            name: midiToNoteName(note.midi),
+            start: note.start,
+            end: note.end
+        };
     }
     return null;
 }

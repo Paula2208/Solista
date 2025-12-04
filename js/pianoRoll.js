@@ -1,4 +1,4 @@
-
+import { getFirstTargetNote } from "./voice.js";
 // === CONFIG ===
 const CONFIG = {
     pxPerBeat: parseInt(window.__TEMPO__),   // Ancho por pulso
@@ -29,6 +29,8 @@ export function renderPianoRoll(notes, selectedVoice, containerId = "pianoSvg") 
 
     drawGrid(svg, minMidi, maxMidi, totalTime, width, height);
     drawNotes(svg, notes, minMidi, maxMidi, selectedVoice);
+
+    getFirstTargetNote();
 }
 
 // === GRID ===
