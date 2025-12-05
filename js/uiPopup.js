@@ -31,7 +31,7 @@ export function showFinalPopup({ audioBlob, metrics}) {
 
                 <div class="modal-body">
                     <p><b>Desviación promedio:</b> ${metrics.desviacionPromedio} cents</p>
-                    <p><b>Notas perfectas:</b> ${metrics.notasPerfectas} / ${metrics.totalNotas}</p>
+                    <p><b>Notas perfectas:</b> ${metrics.perfectNotes} / ${metrics.totalNotes}</p>
 
                     ${url ? `
                     <h6 class="mt-3 mb-2" style="color:white;">Tu grabación</h6>
