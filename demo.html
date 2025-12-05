@@ -152,8 +152,6 @@
 
 
         document.addEventListener('DOMContentLoaded', function () {
-            let receivingVoice = false;
-
             const playBtn = document.getElementById("playBtn");
             const stopBtn = document.getElementById("stopBtn");
             const restartBtn = document.getElementById("restartBtn");
@@ -177,6 +175,10 @@
                 stopBtn.classList.remove("btn-outline-light");
 
                 stopSong();
+
+                micBtn.classList.remove("btn-neon");
+                micBtn.classList.add("btn-outline-light");
+                stopMic();
             };
 
             restartBtn.onclick = () => {
@@ -192,17 +194,12 @@
             document.getElementById("tempoButton").onclick = applyTempo;
 
             micBtn.onclick = () => {
-                micBtn.classList.add("btn-neon");
-                micBtn.classList.remove("btn-outline-light");
-
-                if (receivingVoice) {
-                    receivingVoice = false;
+                if (window.micOn) {
                     micBtn.classList.remove("btn-neon");
                     micBtn.classList.add("btn-outline-light");
                     stopMic();
                 }
                 else {
-                    receivingVoice = true;
                     micBtn.classList.add("btn-neon");
                     micBtn.classList.remove("btn-outline-light");
                     startMic();
@@ -227,7 +224,7 @@
 
 
             document.getElementById("mxlInput").onchange = async (e) => {
-                receivingVoice = false;
+                window.micOn = false;
                 const file = e.target.files[0];
                 if (!file) return;
 

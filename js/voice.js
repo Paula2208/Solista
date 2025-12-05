@@ -2,22 +2,63 @@
 // voice.js — Mic input, pitch detection, tuning UI
 // ===============================================
 
-let audioCtx;
-let analyser;
-let micStream;
-let freqData = new Float32Array(2048);
-window.__NOTE_PREVIEW_FACTOR__ = 0.5/120;
+// -------------------------------------------
+// Variables globales
+// -------------------------------------------
+import { startRecording, stopRecording } from "./recorder.js";
 
+window.audioCtx = null;
+let analyser;
+window.micStream = null;
+
+let freqData = new Float32Array(4096);
+window.__NOTE_PREVIEW_FACTOR__ = 0.5 / 200;
+window.preview = 0.5;
+
+window.micOn = false;
 let running = false;
+
 window.lastIndex = 0;
 
 const pitchText = document.getElementById("pitchData");
 
-// ----------------------------
-// GLOBAL LINK WITH PIANO ROLL
-// ----------------------------
-window.__USER_MIDI__ = null;     // nota detectada por mic
-window.__TARGET_MIDI__ = null;   // nota objetivo actual
+// Datos compartidos con pianoRollPlayer.js
+window.__USER_MIDI__ = null;
+window.__TARGET_MIDI__ = null;
+
+// ===============================
+//  ANALYSIS MODULE
+// ===============================
+let deviations = [];
+let perfectNotes = 0;
+
+export function trackDeviation(deltaCents) {
+    deviations.push(deltaCents);
+
+    if (Math.abs(deltaCents) < 15) {
+        perfectNotes++;
+    }
+}
+
+export function resetAnalysis() {
+    deviations = [];
+    perfectNotes = 0;
+}
+
+export function getFinalAnalysis() {
+    if (deviations.length === 0) {
+        return { desviacionPromedio: 0, perfectNotes, totalNotes: 0 };
+    }
+
+    const absAvg = deviations.reduce((a, b) => a + Math.abs(b), 0) / deviations.length;
+
+    return {
+        desviacionPromedio: absAvg.toFixed(2),
+        perfectNotes,
+        totalNotes: deviations.length
+    };
+}
+
 
 // ----------------------------
 // 1. START / STOP MIC
@@ -25,25 +66,42 @@ window.__TARGET_MIDI__ = null;   // nota objetivo actual
 export async function startMic() {
     if (running) return;
 
-    audioCtx = new AudioContext();
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const source = audioCtx.createMediaStreamSource(micStream);
+    window.audioCtx = new AudioContext();
+    window.micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+            voiceIsolation: false,
+            googNoiseReduction: false,
+            googEchoCancellation: false,
+            googAutoGainControl: false,
+            channelCount: 1,
+            latency: 0
+        }
+    });
 
-    analyser = audioCtx.createAnalyser();
+    const source = window.audioCtx.createMediaStreamSource(window.micStream);
+
+    analyser = window.audioCtx.createAnalyser();
     analyser.fftSize = 4096;
 
     source.connect(analyser);
 
     running = true;
+    window.micOn = true;
+
+    if (window.isPlaying) startRecording();
+
     loop();
 }
 
 export function stopMic() {
     running = false;
-    if (micStream) {
-        micStream.getTracks().forEach(t => t.stop());
-    }
-    if (audioCtx) audioCtx.close();
+    window.micOn = false;
+
+    if (window.audioCtx) window.audioCtx.close();
+    stopRecording();
 }
 
 // ----------------------------
@@ -51,9 +109,10 @@ export function stopMic() {
 // ----------------------------
 function loop() {
     if (!running) return;
+
     analyser.getFloatTimeDomainData(freqData);
 
-    const freq = detectPitch(freqData, audioCtx.sampleRate);
+    const freq = detectPitchFast(freqData, window.audioCtx.sampleRate);
 
     if (freq > 0) {
         const midi = freqToMidi(freq);
@@ -63,52 +122,68 @@ function loop() {
 
         pitchText.textContent = `${freq.toFixed(1)} Hz (${name})`;
 
-        window.updateSingingLine();
+        const targetFreq = midiToFreq(window.__TARGET_MIDI__);
+        const deltaCents = getCentsDiff(freq, targetFreq);
+
+        // Registrar desviación
+        trackDeviation(deltaCents);
     }
 
     requestAnimationFrame(loop);
 }
 
-// ----------------------------
-// 3. YIN PITCH DETECTION
-// ----------------------------
-function detectPitch(buffer, sampleRate) {
+// ======================================================
+// 3. OPTIMIZED YIN PITCH DETECTION
+// ======================================================
 
-    let threshold = 0.10;
-    let tau = 0;
+function detectPitchFast(buffer, sampleRate) {
+    const threshold = 0.12;
 
-    let yin = new Float32Array(buffer.length / 2);
+    const size = buffer.length;
+    const half = size >> 1;
 
-    // Step 1: Difference function
-    for (let t = 1; t < yin.length; t++) {
+    // Difference function (optimizada con step=2)
+    let yin = new Float32Array(half);
+    for (let tau = 1; tau < half; tau++) {
         let sum = 0;
-        for (let i = 0; i < yin.length; i++) {
-            let d = buffer[i] - buffer[i + t];
-            sum += d * d;
+        for (let i = 0; i < half; i += 2) {
+            let delta = buffer[i] - buffer[i + tau];
+            sum += delta * delta;
         }
-        yin[t] = sum;
+        yin[tau] = sum;
     }
 
-    // Step 2: Cumulative mean normalized difference
+    // Cumulative mean normalized difference
     yin[0] = 1;
     let runningSum = 0;
-    for (let t = 1; t < yin.length; t++) {
-        runningSum += yin[t];
-        yin[t] *= t / runningSum;
+    for (let tau = 1; tau < half; tau++) {
+        runningSum += yin[tau];
+        yin[tau] = (runningSum === 0) ? 1 : (yin[tau] * tau / runningSum);
     }
 
-    // Step 3: Absolute threshold
-    for (let t = 2; t < yin.length; t++) {
-        if (yin[t] < threshold) {
-            tau = t;
+    // Absolute threshold
+    let tau = -1;
+    for (let i = 2; i < half; i++) {
+        if (yin[i] < threshold) {
+            tau = i;
+            while (i + 1 < half && yin[i + 1] < yin[i]) {
+                i++;
+                tau = i;
+            }
             break;
         }
     }
-    if (tau === 0) return 0;
 
-    // Step 4: Parabolic interpolation
-    let betterTau =
-        tau + (yin[tau - 1] - yin[tau + 1]) / (2 * (2 * yin[tau] - yin[tau - 1] - yin[tau + 1]));
+    if (tau === -1) return 0;
+
+    // Parabolic interpolation
+    let betterTau = tau;
+    if (tau > 1 && tau < half - 1) {
+        const y1 = yin[tau];
+        const y0 = yin[tau - 1];
+        const y2 = yin[tau + 1];
+        betterTau = tau + (y0 - y2) / (2 * (2 * y1 - y0 - y2));
+    }
 
     return sampleRate / betterTau;
 }
@@ -130,19 +205,19 @@ function midiToNoteName(m) {
 }
 
 // ----------------------------
-// 5. CENTS DIFFERENCE (solo si lo necesitas)
+// 5. Cents (si necesitas análisis)
 // ----------------------------
 function getCentsDiff(freq, targetFreq) {
     return 1200 * Math.log2(freq / targetFreq);
 }
 
-// ----------------------------
-// 6. LINK WITH PIANO-ROLL
-// ----------------------------
+// ======================================================
+// 6. Target Note Handling
+// (solo funciones exportadas, el cálculo se hace en pianoRollPlayer)
+// ======================================================
 
 export function getCurrentTargetNote() {
     if (window.__CURRENT_PLAY_POS__ == null) return null;
-
     if (window.lastIndex == null) window.lastIndex = 0;
 
     const t = window.__CURRENT_PLAY_POS__;
@@ -154,29 +229,30 @@ export function getCurrentTargetNote() {
     const note = notes[idx];
     if (!note) return null;
 
-    const nextNote = notes[idx + 1];
-    if (!nextNote) return {
-        midi: note.midi,
-        name: midiToNoteName(note.midi),
-        start: note.start,
-        end: note.end
-    };
+    const next = notes[idx + 1];
 
-    const preview = window.getPreviewTime();
-
-    // ---- 2. Detectar INICIO de nueva nota (transición) ----
-    if (nextNote && t + preview >= nextNote.start) {
-        window.lastIndex = idx + 1;
-
+    if (!next) {
         return {
-            midi: nextNote.midi,
-            name: midiToNoteName(nextNote.midi),
-            start: nextNote.start,
-            end: nextNote.end
+            midi: note.midi,
+            name: midiToNoteName(note.midi),
+            start: note.start,
+            end: note.end
         };
     }
 
-    if (note && t + preview >= note.start) {
+    // Si estamos cerca de la siguiente nota → cambiar target
+    if (t + window.preview >= next.start) {
+        window.lastIndex = idx + 1;
+        return {
+            midi: next.midi,
+            name: midiToNoteName(next.midi),
+            start: next.start,
+            end: next.end
+        };
+    }
+
+    // Continuar en la actual
+    if (t + window.preview >= note.start) {
         return {
             midi: note.midi,
             name: midiToNoteName(note.midi),
@@ -188,13 +264,11 @@ export function getCurrentTargetNote() {
     return null;
 }
 
-
 export function getFirstTargetNote() {
     for (const note of window.__ALL_NOTES__) {
         if (`${window.__SELECTED_VOICE__}` !== `${note.voice}`) continue;
 
         document.getElementById("targetNote").innerText = midiToNoteName(note.midi);
-
         window.__TARGET_MIDI__ = note.midi;
 
         return {
