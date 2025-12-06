@@ -9,7 +9,7 @@ Solista es una plataforma web que permite cargar partituras en **formato MusicXM
 ## 📦 **Usar Solista**
 
 Abre:
-👉 `[https://paucode.com/Solista/](https://paucode.com/Solista/)`
+👉 [https://paucode.com/Solista/](https://paucode.com/Solista/)
 
 ---
 
