@@ -254,46 +254,64 @@ function playNotePianoLike(freq, t0, dur, noteObj) {
     const ctx = audioCtx;
     const t1 = t0 + dur;
 
-    const attack = 0.003;
-    const decay = 0.18;
-    const sustain = 0.25;
-    const release = 0.25;
+    // ---- ENVOLVENTE MEJORADA (suave, sin golpe) ----
+    const attack = 0.008;       // ataque más suave (antes 0.003)
+    const decay = 0.10;
+    const sustain = 0.22;
+    const release = 0.12;       // colas MUCHO más cortas (antes 0.25)
 
+    // ---- OSCILADOR PRINCIPAL ----
     const osc = ctx.createOscillator();
     osc.type = "triangle";
     osc.frequency.setValueAtTime(freq, t0);
 
+    // ---- ARMÓNICO (más controlado) ----
     const harm = ctx.createOscillator();
     harm.type = "sine";
     harm.frequency.setValueAtTime(freq * 2, t0);
 
     const harmGain = ctx.createGain();
-    harmGain.gain.setValueAtTime(0.2, t0);
-    harmGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
+    harmGain.gain.setValueAtTime(0.12, t0);                    // menos armónico inicial
+    harmGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.08);
 
+    // ---- FILTRO DINÁMICO: evita barro + brillo controlado ----
     const filter = ctx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(2800, t0);
-    filter.Q.value = 0.7;
 
+    // Ajuste dinámico según frecuencia de la nota (piano-like)
+    const cutoff = Math.min(4200, 1800 + freq * 1.4);
+    filter.frequency.setValueAtTime(cutoff, t0);
+    filter.Q.value = 0.6;
+
+    // ---- High-pass para evitar acumulación de graves ----
+    const hpf = ctx.createBiquadFilter();
+    hpf.type = "highpass";
+    hpf.frequency.setValueAtTime(40, t0);            // elimina rumbles
+    hpf.Q.value = 0.7;
+
+    // ---- ENVOLVENTE DE AMPLITUD LIMPIA ----
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0, t0);
-    gain.gain.linearRampToValueAtTime(1.0, t0 + attack);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(0.85, t0 + attack);      // pico más bajo → no golpea
     gain.gain.exponentialRampToValueAtTime(sustain, t0 + decay);
     gain.gain.setValueAtTime(sustain, t1);
     gain.gain.exponentialRampToValueAtTime(0.0001, t1 + release);
 
+    // ---- CONEXIONES ----
     osc.connect(filter);
     harm.connect(harmGain).connect(filter);
-    filter.connect(gain).connect(voiceGainNodes[noteObj.voice]);
+    filter.connect(hpf).connect(gain).connect(voiceGainNodes[noteObj.voice]);
 
+    // ---- INICIO / FIN ----
     osc.start(t0);
     harm.start(t0);
-    osc.stop(t1 + release);
-    harm.stop(t1 + 0.15);
 
-    activeNodes.push(osc, harm, harmGain, filter, gain);
+    osc.stop(t1 + release);
+    harm.stop(t1 + release * 0.8);
+
+    activeNodes.push(osc, harm, harmGain, filter, hpf, gain);
 }
+
 
 // ----------------------------------------------------
 // Cambiar tempo

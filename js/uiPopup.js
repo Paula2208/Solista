@@ -18,17 +18,17 @@ export function showFinalPopup({ audioBlob, metrics }) {
     let medalDesc = "";
     let chips = [];
 
-    if (percentage >= 90) {
+    if (percentage >= 80) {
         medal = "🥇 Precisión Galáctica";
         medalColor = "linear-gradient(90deg, #ffdd55, #ffb347)";
         medalDesc = "Tu afinación es impecable: cada nota cae exactamente en su frecuencia ideal. ¡Tu control vocal atraviesa el espacio-tiempo con precisión!";
         chips = ['Profesional', 'Técnico', 'Épico'];
-    } else if (percentage >= 70) {
+    } else if (percentage >= 65) {
         medal = "🥈 Intérprete de Nebulosa";
         medalColor = "linear-gradient(90deg, #b16cea, #5d26c1)";
         medalDesc = "Tu voz fluye con estabilidad y musicalidad a través de las capas sonoras del cosmos. Tu control melódico revela una técnica en expansión constante.";
         chips = ['Elegante', 'Estable', 'En Crecimiento'];
-    } else if (percentage >= 50) {
+    } else if (percentage >= 45) {
         medal = "🥉 Explorador Armónico";
         medalColor = "linear-gradient(90deg, #4facfe, #00f2fe)";
         medalDesc = "Tu exploración continúa avanzando. Cada nota te impulsa más lejos en tu viaje musical.";
