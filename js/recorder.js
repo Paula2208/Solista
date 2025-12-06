@@ -10,7 +10,19 @@ let isRecording = false;
 export async function startRecording() {
     try {
         if (isRecording) return;
-        if(window.micStream == null) window.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (window.micStream == null) window.micStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false,
+                voiceIsolation: false,
+                googNoiseReduction: false,
+                googEchoCancellation: false,
+                googAutoGainControl: false,
+                channelCount: 1,
+                latency: 0
+            }
+        });
 
         recordedChunks = []; // limpiar grabaciones previas
 

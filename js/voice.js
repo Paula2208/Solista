@@ -11,6 +11,8 @@ window.audioCtx = null;
 let analyser;
 window.micStream = null;
 
+let perfectNoteGap = 20; // cents
+
 let freqData = new Float32Array(4096);
 window.__NOTE_PREVIEW_FACTOR__ = 0.5 / 200;
 window.preview = 0.5;
@@ -32,13 +34,44 @@ window.__TARGET_MIDI__ = null;
 let deviations = [];
 let perfectNotes = 0;
 
-export function trackDeviation(deltaCents) {
+let lowestMidi = Infinity;
+let highestMidi = -Infinity;
+
+let bestCents = Infinity;   // menor desviación
+let bestMidi = null;
+
+let worstCents = -Infinity; // mayor desviación
+let worstMidi = null;
+
+
+export function trackDeviation(deltaCents, midi) {
     deviations.push(deltaCents);
 
-    if (Math.abs(deltaCents) < 15) {
+    // Notas perfectas
+    if (Math.abs(deltaCents) < perfectNoteGap) {
         perfectNotes++;
     }
+
+    // ====== Extra metrics ======
+    if (midi != null) {
+        // Rango vocal
+        if (midi < lowestMidi) lowestMidi = midi;
+        if (midi > highestMidi) highestMidi = midi;
+
+        // Nota más afinada
+        if (Math.abs(deltaCents) < bestCents) {
+            bestCents = Math.abs(deltaCents);
+            bestMidi = midi;
+        }
+
+        // Nota más desafinada
+        if (Math.abs(deltaCents) > worstCents) {
+            worstCents = Math.abs(deltaCents);
+            worstMidi = midi;
+        }
+    }
 }
+
 
 export function resetAnalysis() {
     deviations = [];
@@ -47,17 +80,32 @@ export function resetAnalysis() {
 
 export function getFinalAnalysis() {
     if (deviations.length === 0) {
-        return { desviacionPromedio: 0, perfectNotes, totalNotes: 0 };
+        return {
+            desviacionPromedio: 0,
+            perfectNotes,
+            totalNotes: 0,
+            lowestNote: "-",
+            highestNote: "-",
+            bestNote: "-",
+            worstNote: "-",
+            pitchHistory : []
+        };
     }
 
     const absAvg = deviations.reduce((a, b) => a + Math.abs(b), 0) / deviations.length;
 
     return {
-        desviacionPromedio: absAvg.toFixed(2),
+        desviacionPromedio: absAvg,
         perfectNotes,
-        totalNotes: deviations.length
+        totalNotes: deviations.length,
+        lowestNote: midiToNoteName(lowestMidi),
+        highestNote: midiToNoteName(highestMidi),
+        bestNote: bestMidi ? midiToNoteName(bestMidi) : "-",
+        worstNote: worstMidi ? midiToNoteName(worstMidi) : "-",
+        pitchHistory : deviations
     };
 }
+
 
 
 // ----------------------------
@@ -112,7 +160,8 @@ function loop() {
 
     analyser.getFloatTimeDomainData(freqData);
 
-    const freq = detectPitchFast(freqData, window.audioCtx.sampleRate);
+    const targetFreq = midiToFreq(window.__TARGET_MIDI__);
+    const freq = detectPitchAroundTarget(freqData, window.audioCtx.sampleRate, targetFreq);
 
     if (freq > 0) {
         const midi = freqToMidi(freq);
@@ -122,71 +171,46 @@ function loop() {
 
         pitchText.textContent = `${freq.toFixed(1)} Hz (${name})`;
 
-        const targetFreq = midiToFreq(window.__TARGET_MIDI__);
         const deltaCents = getCentsDiff(freq, targetFreq);
 
         // Registrar desviación
-        trackDeviation(deltaCents);
+        trackDeviation(deltaCents, midi);
     }
 
     requestAnimationFrame(loop);
 }
 
 // ======================================================
-// 3. OPTIMIZED YIN PITCH DETECTION
+// 3. PITCH DETECTION -> Afinación
 // ======================================================
 
-function detectPitchFast(buffer, sampleRate) {
-    const threshold = 0.12;
+function detectPitchAroundTarget(buffer, sampleRate, targetFreq) {
+    if (!targetFreq) return 0;
 
-    const size = buffer.length;
-    const half = size >> 1;
+    const period = sampleRate / targetFreq;
+    const minLag = Math.max(2, Math.round(period * 0.9));
+    const maxLag = Math.min(buffer.length - 1, Math.round(period * 1.1));
 
-    // Difference function (optimizada con step=2)
-    let yin = new Float32Array(half);
-    for (let tau = 1; tau < half; tau++) {
-        let sum = 0;
-        for (let i = 0; i < half; i += 2) {
-            let delta = buffer[i] - buffer[i + tau];
-            sum += delta * delta;
+    let bestLag = minLag;
+    let bestCorr = -Infinity;
+
+    for (let lag = minLag; lag <= maxLag; lag++) {
+        let corr = 0;
+
+        // step=2 para ganar velocidad
+        for (let i = 0; i < buffer.length - lag; i += 2) {
+            corr += buffer[i] * buffer[i + lag];
         }
-        yin[tau] = sum;
-    }
 
-    // Cumulative mean normalized difference
-    yin[0] = 1;
-    let runningSum = 0;
-    for (let tau = 1; tau < half; tau++) {
-        runningSum += yin[tau];
-        yin[tau] = (runningSum === 0) ? 1 : (yin[tau] * tau / runningSum);
-    }
-
-    // Absolute threshold
-    let tau = -1;
-    for (let i = 2; i < half; i++) {
-        if (yin[i] < threshold) {
-            tau = i;
-            while (i + 1 < half && yin[i + 1] < yin[i]) {
-                i++;
-                tau = i;
-            }
-            break;
+        if (corr > bestCorr) {
+            bestCorr = corr;
+            bestLag = lag;
         }
     }
 
-    if (tau === -1) return 0;
-
-    // Parabolic interpolation
-    let betterTau = tau;
-    if (tau > 1 && tau < half - 1) {
-        const y1 = yin[tau];
-        const y0 = yin[tau - 1];
-        const y2 = yin[tau + 1];
-        betterTau = tau + (y0 - y2) / (2 * (2 * y1 - y0 - y2));
-    }
-
-    return sampleRate / betterTau;
+    return sampleRate / bestLag;
 }
+
 
 // ----------------------------
 // 4. Frequency ↔ MIDI
